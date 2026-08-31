@@ -1,0 +1,1 @@
+"""Provider-agnostic LLM access layer (see :mod:`llm.provider`)."""
