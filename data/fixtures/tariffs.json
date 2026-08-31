@@ -1,0 +1,14 @@
+{
+  "flat-standard": {
+    "rate_per_kwh": 0.18,
+    "export_credit_per_kwh": 0.06
+  },
+  "time-of-use-a": {
+    "peak_hours": [16, 17, 18, 19, 20, 21],
+    "shoulder_hours": [9, 10, 11, 12, 13, 14, 15],
+    "off_peak_rate_per_kwh": 0.12,
+    "peak_rate_per_kwh": 0.32,
+    "shoulder_rate_per_kwh": 0.20,
+    "export_credit_per_kwh": 0.08
+  }
+}
