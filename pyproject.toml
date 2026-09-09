@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "gridlens"
 version = "1.0.0"
-description = "GridLens: Energy-System Scenario and Decision Engine (Day 1 snapshot)."
+description = "GridLens: Energy-System Scenario and Decision Engine (Day 2 snapshot)."
 requires-python = ">=3.11"
 
 [tool.pytest.ini_options]
