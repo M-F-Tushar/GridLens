@@ -1,4 +1,4 @@
-# GridLens
+# GridLens — Energy-System Scenario and Decision Engine
 
 **An LLM-assisted energy intelligence platform for scenario modeling, forecasting, and evidence-grounded decision support.**
 
