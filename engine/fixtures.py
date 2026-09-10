@@ -14,6 +14,7 @@ from pathlib import Path
 
 FIXTURES_DIR = Path(__file__).resolve().parent.parent / "data" / "fixtures"
 
+KNOWN_SITES = frozenset({"campus-microgrid-a"})
 
 @dataclass(frozen=True)
 # one hour of energy-related data.
@@ -35,6 +36,10 @@ def _read_csv(name: str) -> list[dict[str, str]]:
 @lru_cache(maxsize=8)
 def load_site_rows(site: str) -> tuple[FixtureRow, ...]:
     """main function for loading hourly site data."""
+    
+    if site not in KNOWN_SITES:
+        raise ValueError(f"Unknown site: {site!r}. Known sites: {sorted(KNOWN_SITES)}")
+    
     load_rows = _read_csv("hourly_load.csv")
     solar_rows = _read_csv("solar_profile.csv")
     carbon_rows = _read_csv("carbon_intensity.csv")
