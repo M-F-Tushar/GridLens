@@ -7,20 +7,73 @@ the typed result.
 """
 from __future__ import annotations
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.config import get_settings
+from app.logging_config import RequestLoggingMiddleware, configure_logging
 from app.schemas import ScenarioCompareRequest
-from domain.models import ForecastMethod, ForecastResult, ScenarioComparison, ScenarioRequest, ScenarioResult
+
+from domain.models import (
+    ExplanationRequest,
+    ExplanationResult,
+    ForecastMethod,
+    ForecastResult,
+    ScenarioComparison,
+    ScenarioRequest,
+    ScenarioResult,
+)
 from engine.compare import compare_scenarios
 from engine.forecast import run_forecast
 from engine.scenario_engine import run_scenario
+from rag.answer import answer_question
+
+configure_logging()
+settings = get_settings()
 
 app = FastAPI(
     title="GridLens API",
     description="Energy-system scenario and decision engine.",
     version="1.0.0",
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=list(settings.cors_allow_origins),
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+app.add_middleware(RequestLoggingMiddleware)
+
+
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception):
+    req_id = getattr(request.state, "request_id", None)
+    base_headers = {"X-Request-ID": req_id} if req_id else {}
+
+    if isinstance(exc, (HTTPException, StarletteHTTPException)):
+        headers = dict(getattr(exc, "headers", None) or {})
+        headers.update(base_headers)
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail},
+            headers=headers or None,
+        )
+    if isinstance(exc, RequestValidationError):
+        return JSONResponse(
+            status_code=422,
+            content={"detail": exc.errors()},
+            headers=base_headers or None,
+        )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"},
+        headers=base_headers or None,
+    )
 
 
 @app.get("/health")
@@ -92,3 +145,23 @@ def forecast_endpoint(
         )
     except (FileNotFoundError, ValueError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/explain", response_model=ExplanationResult)
+def explain_endpoint(request: ExplanationRequest) -> ExplanationResult:
+    settings = get_settings()
+    scenario_result = _run_validated(request.scenario, settings) if request.scenario is not None else None
+    comparison_result = None
+    if request.comparison is not None:
+        base = _run_validated(request.comparison.base, settings)
+        candidate = _run_validated(request.comparison.candidate, settings)
+        comparison_result = compare_scenarios(base, candidate)
+
+    return answer_question(
+        question=request.question,
+        scenario_result=scenario_result,
+        comparison=comparison_result,
+        top_k=request.top_k,
+        similarity_threshold=request.similarity_threshold,
+        settings=settings,
+    )
