@@ -155,6 +155,11 @@ class ScenarioComparison(BaseModel):
     generated_at: datetime
 
 
+class ScenarioCompareRequest(BaseModel):
+    base: ScenarioRequest
+    candidate: ScenarioRequest
+
+
 class SourceReference(BaseModel):
     """A citation pointing back at a retrieved knowledge-base chunk (RAG)."""
 
@@ -166,3 +171,31 @@ class SourceReference(BaseModel):
     snippet: str
 
     model_config = ConfigDict(frozen=True)
+
+
+class ExplanationRequest(BaseModel):
+    """Request payload for the cited explanation endpoint."""
+
+    question: str = Field(..., min_length=1, description="Question to answer.")
+    scenario: ScenarioRequest | None = None
+    comparison: ScenarioCompareRequest | None = None
+    top_k: int = Field(default=4, ge=0)
+    similarity_threshold: float = Field(default=0.05, ge=0.0, le=1.0)
+
+    @field_validator("question")
+    @classmethod
+    def _no_blank_question(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("question must not be blank")
+        return value.strip()
+
+
+class ExplanationResult(BaseModel):
+    """Full cited explanation result."""
+
+    question: str
+    answer: str
+    citations: list[SourceReference] = Field(default_factory=list)
+    insufficient_evidence: bool = False
+    provider: str = "none"
+    generated_at: datetime
