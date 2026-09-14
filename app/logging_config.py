@@ -22,7 +22,7 @@ def configure_logging(level: int = logging.INFO) -> logging.Logger:
         handler.setFormatter(logging.Formatter("%(message)s"))
         logger.addHandler(handler)
     logger.setLevel(level)
-    logger.propagate = False
+    logger.propagate = True
     return logger
 
 
