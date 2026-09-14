@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-from domain.models import ForecastMethod, ScenarioRequest
-
-
-class ScenarioCompareRequest(BaseModel):
-    base: ScenarioRequest
-    candidate: ScenarioRequest
+from domain.models import (
+    ExplanationRequest,
+    ExplanationResult,
+    ForecastMethod,
+    ScenarioCompareRequest,
+    ScenarioRequest,
+)
 
 
 class ForecastQuery(BaseModel):
