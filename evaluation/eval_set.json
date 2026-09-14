@@ -1,0 +1,74 @@
+[
+  {
+    "id": "eval-tariffs-1",
+    "question": "How is the tariff rate applied to grid imports?",
+    "expected_doc_ids": ["kb-tariffs"],
+    "answerable": true
+  },
+  {
+    "id": "eval-battery-1",
+    "question": "What is the battery round trip efficiency assumption?",
+    "expected_doc_ids": ["kb-battery-efficiency"],
+    "answerable": true
+  },
+  {
+    "id": "eval-emissions-1",
+    "question": "How are carbon emissions calculated from grid imports?",
+    "expected_doc_ids": ["kb-carbon-factors"],
+    "answerable": true
+  },
+  {
+    "id": "eval-solar-1",
+    "question": "What does the solar derating factor account for?",
+    "expected_doc_ids": ["kb-solar-derating"],
+    "answerable": true
+  },
+  {
+    "id": "eval-forecast-1",
+    "question": "What forecast methods does GridLens use and why not machine learning?",
+    "expected_doc_ids": ["kb-forecast-methodology"],
+    "answerable": true
+  },
+  {
+    "id": "eval-provenance-1",
+    "question": "Which parts of the data are synthetic versus real?",
+    "expected_doc_ids": ["kb-data-sources"],
+    "answerable": true
+  },
+  {
+    "id": "eval-limitations-1",
+    "question": "What are the known system limitations of GridLens?",
+    "expected_doc_ids": ["kb-system-limitations"],
+    "answerable": true
+  },
+  {
+    "id": "eval-insufficient-1",
+    "question": "What is the capital of France?",
+    "expected_doc_ids": [],
+    "answerable": false
+  },
+  {
+    "id": "eval-insufficient-2",
+    "question": "asdkjnasd qwoiejqwoie zxcvzxcv unrelated nonsense tokens",
+    "expected_doc_ids": [],
+    "answerable": false
+  },
+  {
+    "id": "eval-comparison-1",
+    "question": "How are scenario comparisons computed?",
+    "expected_doc_ids": ["kb-comparison-methodology"],
+    "answerable": true
+  },
+  {
+    "id": "eval-energy-balance-1",
+    "question": "What is the hourly energy balance invariant and what is curtailment?",
+    "expected_doc_ids": ["kb-energy-balance"],
+    "answerable": true
+  },
+  {
+    "id": "eval-kpi-1",
+    "question": "How is the self-consumption ratio defined?",
+    "expected_doc_ids": ["kb-kpi-definitions"],
+    "answerable": true
+  }
+]
