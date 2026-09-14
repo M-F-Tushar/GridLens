@@ -34,6 +34,11 @@ class ConversationState:
             return None
         return next(reversed(self.scenario_history))
 
+    @property
+    def last_scenario(self) -> ScenarioResult | None:
+        last_id = self.last_scenario_id()
+        return self.get_scenario(last_id) if last_id else None
+
     def recent_turns(self, limit: int = 20) -> list[ConversationTurn]:
         return self.turns[-limit:]
 
