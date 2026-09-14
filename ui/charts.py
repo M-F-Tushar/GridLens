@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import plotly.graph_objects as go
 
-from domain.models import ScenarioResult
+from domain.models import ForecastResult, ScenarioComparison, ScenarioResult
 
 
 def demand_generation_grid_figure(result: ScenarioResult) -> go.Figure:
@@ -64,3 +64,70 @@ def kpi_summary_markdown(result: ScenarioResult) -> str:
         f"{d.max_abs_energy_balance_error_kwh:.6f} kWh, "
         f"{d.total_violation_count} violation(s), engine v{d.engine_version}"
     )
+
+
+def forecast_figure(result: ForecastResult) -> go.Figure:
+    hours = [p.hour_index for p in result.points]
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=hours,
+            y=[p.predicted_demand_kwh for p in result.points],
+            name="Predicted demand (kWh)",
+            mode="lines",
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=hours,
+            y=[p.predicted_solar_generation_kwh for p in result.points],
+            name="Predicted solar generation (kWh)",
+            mode="lines",
+        )
+    )
+    fig.update_layout(
+        title="Forecast",
+        xaxis_title="Hour",
+        yaxis_title="kWh",
+        legend=dict(orientation="h"),
+    )
+    return fig
+
+
+def warnings_markdown(result: ScenarioResult) -> str:
+    violations: list[str] = []
+    for r in result.records:
+        if r.violations:
+            violations.extend(f"Hour {r.hour_index}: {v}" for v in r.violations)
+    if not violations:
+        return "No constraint violations detected."
+    return "### Warnings & Constraint Violations\n" + "\n".join(f"- {v}" for v in violations)
+
+
+def comparison_table_markdown(comparison: ScenarioComparison) -> str:
+    lines = [
+        f"### Scenario Comparison: `{comparison.base_scenario_id}` vs `{comparison.candidate_scenario_id}`",
+        "",
+        "| Metric | Delta (candidate - base) |",
+        "|---|---|",
+    ]
+    for k, v in comparison.kpi_deltas.items():
+        lines.append(f"| {k} | {v:+.4f} |")
+    if comparison.narrative_points:
+        lines.append("")
+        lines.append("### Key Takeaways")
+        for point in comparison.narrative_points:
+            lines.append(f"- {point}")
+    return "\n".join(lines)
+
+
+def citations_markdown(citations: list) -> str:
+    if not citations:
+        return "No citations available."
+    lines = ["### Citations & Supporting Evidence"]
+    for c in citations:
+        chunk_id = getattr(c, "chunk_id", "")
+        title = getattr(c, "title", "")
+        snippet = getattr(c, "snippet", "")
+        lines.append(f"- **[{chunk_id}] {title}**: {snippet}")
+    return "\n".join(lines)
