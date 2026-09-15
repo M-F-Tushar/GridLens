@@ -16,7 +16,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 ENV GRIDLENS_ENV=production \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    GRADIO_SERVER_NAME=0.0.0.0
 
 EXPOSE 8000 7860
 
