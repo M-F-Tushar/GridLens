@@ -109,14 +109,15 @@ GridLens/
 │   └── schemas.py              # Request and response schemas
 ├── app.py                      # Standalone launcher for the Gradio interface
 ├── data/
-│   ├── fixtures/               # Synthetic hourly demand, solar, and tariff data
-│   └── knowledge/              # 12 Markdown documentation files for RAG
+│   ├── fixtures/               # Synthetic hourly demand, solar, and tariff data (+ PROVENANCE.md)
+│   └── knowledge/              # 12 Markdown documentation files for RAG (+ system_limitations.md)
 ├── docs/                       # Architecture, runbooks, and evaluation notes
 │   ├── architecture.md         # System design and boundaries
 │   ├── api_examples.md         # Endpoint curl examples
-│   ├── data_provenance.md      # Fixture origin documentation
+│   ├── data_provenance.md      # Fixture origin documentation guide
 │   ├── evaluation_results.md   # Retrieval and quality benchmark report
-│   ├── limitations.md          # Technical and operational limitations
+│   ├── gridlens_comprehensive_audit_report.md # Comprehensive architectural audit report
+│   ├── limitations.md          # Technical and operational limitations guide
 │   └── runbook.md              # Operations and triage runbook
 ├── domain/
 │   └── models.py               # Shared Pydantic data contracts
@@ -156,7 +157,7 @@ GridLens/
 
 ### Prerequisites
 
-- Python 3.10, 3.11, or 3.12
+- Python 3.11 or 3.12
 - Git
 
 ### Installation
@@ -212,6 +213,11 @@ Run the container:
 ```bash
 docker run -p 8000:8000 -p 7860:7860 gridlens
 ```
+
+> **Note on Container Services:** The container entrypoint launches the FastAPI REST service on port 8000 by default. To also run the Gradio UI inside the container on port 7860, run:
+> ```bash
+> docker exec -it <container_id> python -m ui.gradio_app
+> ```
 
 ---
 
