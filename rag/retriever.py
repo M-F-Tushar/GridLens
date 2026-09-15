@@ -8,7 +8,7 @@ from rag.store import SearchResult, VectorStore
 
 
 DEFAULT_TOP_K = 4
-DEFAULT_SIMILARITY_THRESHOLD = 0.05
+DEFAULT_SIMILARITY_THRESHOLD = 0.30
 
 @dataclass(frozen=True)
 class Citation:
