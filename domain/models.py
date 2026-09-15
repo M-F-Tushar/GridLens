@@ -180,7 +180,7 @@ class ExplanationRequest(BaseModel):
     scenario: ScenarioRequest | None = None
     comparison: ScenarioCompareRequest | None = None
     top_k: int = Field(default=4, ge=0)
-    similarity_threshold: float = Field(default=0.05, ge=0.0, le=1.0)
+    similarity_threshold: float = Field(default=0.30, ge=0.0, le=1.0)
 
     @field_validator("question")
     @classmethod
