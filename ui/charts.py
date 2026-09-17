@@ -16,11 +16,13 @@ def demand_generation_grid_figure(result: ScenarioResult) -> go.Figure:
     fig.add_trace(go.Bar(x=hours, y=[r.grid_import_kwh for r in result.records], name="Grid import (kWh)"))
     fig.add_trace(go.Bar(x=hours, y=[-r.grid_export_kwh for r in result.records], name="Grid export (kWh)"))
     fig.update_layout(
-        title="Demand, solar generation and grid exchange",
+        title=dict(text="Demand, Solar Generation and Grid Exchange", x=0.02),
         xaxis_title="Hour",
         yaxis_title="kWh",
         barmode="relative",
-        legend=dict(orientation="h"),
+        template="plotly_white",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1.0),
+        margin=dict(t=50, b=40, l=50, r=20),
     )
     return fig
 
@@ -38,10 +40,12 @@ def battery_soc_figure(result: ScenarioResult) -> go.Figure:
         )
     )
     fig.update_layout(
-        title="Battery state of charge",
+        title=dict(text="Battery State of Charge", x=0.02),
         xaxis_title="Hour",
         yaxis_title="SoC (%)",
         yaxis_range=[0, 100],
+        template="plotly_white",
+        margin=dict(t=50, b=40, l=50, r=20),
     )
     return fig
 
@@ -50,19 +54,14 @@ def kpi_summary_markdown(result: ScenarioResult) -> str:
     t = result.totals
     d = result.diagnostics
     return (
-        f"**Scenario:** `{result.scenario_id}`  \n"
-        f"**Total demand:** {t.total_demand_kwh:,.1f} kWh &nbsp;|&nbsp; "
-        f"**Total solar:** {t.total_solar_generation_kwh:,.1f} kWh  \n"
-        f"**Grid import:** {t.total_grid_import_kwh:,.1f} kWh &nbsp;|&nbsp; "
-        f"**Grid export:** {t.total_grid_export_kwh:,.1f} kWh &nbsp;|&nbsp; "
-        f"**Curtailed:** {t.total_curtailment_kwh:,.1f} kWh  \n"
-        f"**Cost:** {t.total_cost:,.2f} &nbsp;|&nbsp; "
-        f"**Emissions:** {t.total_emissions_kg:,.2f} kg CO2e  \n"
-        f"**Self-consumption ratio:** {t.self_consumption_ratio:.0%} &nbsp;|&nbsp; "
-        f"**Renewable fraction:** {t.renewable_fraction:.0%}  \n"
-        f"**Diagnostics:** max energy-balance error "
-        f"{d.max_abs_energy_balance_error_kwh:.6f} kWh, "
-        f"{d.total_violation_count} violation(s), engine v{d.engine_version}"
+        f"### 📊 Scenario Summary: `{result.scenario_id}`\n\n"
+        f"| Metric | Value | Metric | Value |\n"
+        f"| :--- | :--- | :--- | :--- |\n"
+        f"| **Total demand** | {t.total_demand_kwh:,.1f} kWh | **Grid export** | {t.total_grid_export_kwh:,.1f} kWh |\n"
+        f"| **Total solar** | {t.total_solar_generation_kwh:,.1f} kWh | **Curtailed** | {t.total_curtailment_kwh:,.1f} kWh |\n"
+        f"| **Grid import** | {t.total_grid_import_kwh:,.1f} kWh | **Cost** | ${t.total_cost:,.2f} |\n"
+        f"| **Self-consumption** | {t.self_consumption_ratio:.0%} | **Emissions** | {t.total_emissions_kg:,.2f} kg CO2e |\n"
+        f"| **Renewable fraction** | {t.renewable_fraction:.0%} | **Diagnostics** | {d.total_violation_count} error(s) (v{d.engine_version}) |\n"
     )
 
 
@@ -86,10 +85,12 @@ def forecast_figure(result: ForecastResult) -> go.Figure:
         )
     )
     fig.update_layout(
-        title="Forecast",
+        title=dict(text="Forecast", x=0.02),
         xaxis_title="Hour",
         yaxis_title="kWh",
-        legend=dict(orientation="h"),
+        template="plotly_white",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1.0),
+        margin=dict(t=50, b=40, l=50, r=20),
     )
     return fig
 
