@@ -114,29 +114,114 @@ class RetryingRemoteProvider(LLMProvider):
         raise NotImplementedError
 
 
+PROVIDER_MODELS: dict[str, list[str]] = {
+    "Local (Offline)": [
+        "local-deterministic",
+    ],
+    "OpenRouter (Free)": [
+        "meta-llama/llama-3.3-70b-instruct:free",
+        "google/gemini-2.0-flash-exp:free",
+        "deepseek/deepseek-r1:free",
+    ],
+    "Groq (Free Tier)": [
+        "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant",
+        "mixtral-8x7b-32768",
+    ],
+}
+
+PROVIDER_DESCRIPTIONS: dict[str, str] = {
+    "Local (Offline)": "🔒 **Offline Mode:** Uses local deterministic fact-and-citation template. No API key or network required.",
+    "OpenRouter (Free)": "🌐 **OpenRouter Free Models:** Free access to high-capability models (Llama 3.3 70B, Gemini 2.0 Flash, DeepSeek R1). Requires `OPENROUTER_API_KEY` (or enter key below).",
+    "Groq (Free Tier)": "⚡ **Groq Free Tier:** Ultra-fast LPU inference on open models (Llama 3.3 70B, 8B, Mixtral). Requires `GROQ_API_KEY` (or enter key below).",
+}
+
+
+def normalize_provider_key(name: str | None) -> str:
+    if not name:
+        return "local"
+    lower = name.lower().strip()
+    if "openrouter" in lower:
+        return "openrouter"
+    if "groq" in lower:
+        return "groq"
+    if "openai" in lower:
+        return "openai"
+    if "local" in lower or lower in ("none", "offline"):
+        return "local"
+    return lower
+
+
 def build_provider_from_settings(
     provider_name: str,
-    openai_api_key: str | None,
-    openai_model: str,
-    timeout_seconds: float,
-    max_retries: int,
+    openai_api_key: str | None = None,
+    openai_model: str = "gpt-4o-mini",
+    timeout_seconds: float = 10.0,
+    max_retries: int = 3,
+    api_key: str | None = None,
+    model: str | None = None,
+    base_url: str | None = None,
 ) -> LLMProvider:
     """Model routing: pick a provider by name, always falling back safely.
 
-    Week 2 revision: this is "model routing" — one call site, provider chosen
-    by configuration rather than by branching logic scattered through the app.
+    Supports local offline execution, OpenAI, OpenRouter, Groq, and Grok (xAI).
+    If an external provider is chosen but no API key is supplied, safely falls back
+    to LocalDeterministicProvider to preserve offline resilience.
     """
-    if provider_name == "local":
+    key_provider = normalize_provider_key(provider_name)
+    if key_provider == "local":
         return LocalDeterministicProvider()
-    if provider_name == "openai":
-        if not openai_api_key:
+
+    from app.config import get_settings
+    settings = get_settings()
+
+    if key_provider == "openrouter":
+        effective_key = api_key or settings.openrouter_api_key
+        if not effective_key:
             return LocalDeterministicProvider()
-        from llm.openai_provider import OpenAIProvider  # imported lazily: optional dependency
+        from llm.openai_provider import OpenAIProvider
 
         return OpenAIProvider(
-            api_key=openai_api_key,
-            model=openai_model,
+            api_key=effective_key,
+            model=model or settings.openrouter_model,
+            base_url=base_url or settings.openrouter_base_url,
+            provider_name="openrouter",
+            timeout_seconds=timeout_seconds,
+            max_retries=max_retries,
+            extra_headers={
+                "HTTP-Referer": "https://github.com/M-F-Tushar/GridLens",
+                "X-Title": "GridLens",
+            },
+        )
+
+    if key_provider == "groq":
+        effective_key = api_key or settings.groq_api_key
+        if not effective_key:
+            return LocalDeterministicProvider()
+        from llm.openai_provider import OpenAIProvider
+
+        return OpenAIProvider(
+            api_key=effective_key,
+            model=model or settings.groq_model,
+            base_url=base_url or settings.groq_base_url,
+            provider_name="groq",
             timeout_seconds=timeout_seconds,
             max_retries=max_retries,
         )
+
+    if key_provider == "openai":
+        effective_key = api_key or openai_api_key or settings.openai_api_key
+        if not effective_key:
+            return LocalDeterministicProvider()
+        from llm.openai_provider import OpenAIProvider
+
+        return OpenAIProvider(
+            api_key=effective_key,
+            model=model or openai_model or settings.openai_model,
+            base_url=base_url or settings.openai_base_url,
+            provider_name="openai",
+            timeout_seconds=timeout_seconds,
+            max_retries=max_retries,
+        )
+
     raise ProviderError(f"Unknown llm_provider setting: {provider_name!r}")
