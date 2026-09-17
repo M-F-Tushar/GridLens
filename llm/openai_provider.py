@@ -11,13 +11,34 @@ import json
 import urllib.error
 import urllib.request
 
-from llm.provider import CompletionRequest, CompletionResponse, ProviderError, RetryingRemoteProvider, estimate_tokens
+from llm.provider import (
+    CompletionRequest,
+    CompletionResponse,
+    ProviderError,
+    RetryingRemoteProvider,
+    estimate_tokens,
+)
 
 _CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions"
 
 
 class OpenAIProvider(RetryingRemoteProvider):
     name = "openai"
+
+    def __init__(
+        self,
+        api_key: str,
+        model: str,
+        base_url: str = _CHAT_COMPLETIONS_URL,
+        provider_name: str = "openai",
+        timeout_seconds: float = 10.0,
+        max_retries: int = 3,
+        extra_headers: dict[str, str] | None = None,
+    ) -> None:
+        super().__init__(api_key, model, timeout_seconds=timeout_seconds, max_retries=max_retries)
+        self.base_url = base_url
+        self.name = provider_name
+        self.extra_headers = extra_headers or {}
 
     def _call(self, request: CompletionRequest) -> CompletionResponse:
         payload = {
@@ -30,14 +51,16 @@ class OpenAIProvider(RetryingRemoteProvider):
             ],
         }
         body = json.dumps(payload).encode("utf-8")
+        headers = {
+            "Authorization": "Bearer " + self._api_key,
+            "Content-Type": "application/json",
+            **self.extra_headers,
+        }
         req = urllib.request.Request(
-            _CHAT_COMPLETIONS_URL,
+            self.base_url,
             data=body,
             method="POST",
-            headers={
-                "Authorization": "Bearer " + self._api_key,
-                "Content-Type": "application/json",
-            },
+            headers=headers,
         )
         try:
             with urllib.request.urlopen(req, timeout=self.timeout_seconds) as resp:
