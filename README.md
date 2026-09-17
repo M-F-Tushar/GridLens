@@ -133,8 +133,8 @@ GridLens/
 │   └── weather.py              # Open-Meteo weather adapter with fallback
 ├── llm/
 │   ├── conversation.py         # Session history registry
-│   ├── openai_provider.py      # Hosted OpenAI client wrapper
-│   └── provider.py             # LLM provider abstractions
+│   ├── openai_provider.py      # OpenAI-compatible hosted provider client (OpenRouter, Groq)
+│   └── provider.py             # LLM provider abstractions and model registry
 ├── rag/                        # Retrieval-augmented generation pipeline
 │   ├── answer.py               # Citation and answer composition service
 │   ├── chunking.py             # Deterministic Markdown chunking
@@ -142,7 +142,7 @@ GridLens/
 │   ├── ingest.py               # Incremental file-hashed ingestion
 │   ├── retriever.py            # Similarity scoring and vector search
 │   └── store.py                # In-memory vector and keyword store
-├── tests/                      # Full pytest test suite (111 tests)
+├── tests/                      # Full pytest test suite (121 tests)
 ├── ui/
 │   ├── charts.py               # Plotly figure and markdown formatting helpers
 │   └── gradio_app.py           # 4-tab Gradio user interface
@@ -179,10 +179,30 @@ GridLens/
    pip install -r requirements.txt
    ```
 
-4. Configure environment settings (optional, defaults work out-of-the-box):
+4. Configure environment settings (optional, defaults work out-of-the-box in full offline mode):
    ```bash
    cp .env.example .env
    ```
+
+### LLM Provider & Model Options
+
+GridLens features a provider-agnostic LLM interface for cited explanations. In the Gradio UI ("💬 Ask GridLens" tab) and `/api/explain` endpoint, you can choose the provider and model dynamically:
+
+| Provider | Description | Recommended Models |
+| :--- | :--- | :--- |
+| **Local (Offline)** | Zero keys, zero network traffic; uses deterministic templates | `local-deterministic` (Default) |
+| **OpenRouter (Free)** | Free-tier community access to high-capability models | `meta-llama/llama-3.3-70b-instruct:free`<br>`google/gemini-2.0-flash-exp:free`<br>`deepseek/deepseek-r1:free` |
+| **Groq (Free Tier)** | Ultra-fast LPU inference on open weights | `llama-3.3-70b-versatile`<br>`llama-3.1-8b-instant`<br>`mixtral-8x7b-32768` |
+
+To enable hosted providers, set their corresponding keys in `.env` or enter the key directly in the Gradio UI:
+```bash
+# OpenRouter
+OPENROUTER_API_KEY=sk-or-v1-...
+
+# Groq
+GROQ_API_KEY=gsk_...
+```
+*Note: If a remote provider is selected without an API key, GridLens automatically and safely falls back to local offline mode.*
 
 ### Running the Services
 
@@ -255,11 +275,15 @@ curl -s "http://127.0.0.1:8000/api/forecast?horizon_hours=48&method=seasonal_nai
 ```
 
 ### Request a Cited Explanation
-Ask an operational question grounded in the documentation:
+Ask an operational question grounded in the documentation (optionally specifying a provider and model):
 ```bash
 curl -s -X POST http://127.0.0.1:8000/api/explain \
   -H "Content-Type: application/json" \
-  -d '{"question": "How is battery round-trip efficiency modeled?"}' \
+  -d '{
+        "question": "How is battery round-trip efficiency modeled?",
+        "provider": "openrouter",
+        "model": "meta-llama/llama-3.3-70b-instruct:free"
+      }' \
   | python3 -m json.tool
 ```
 
@@ -286,7 +310,7 @@ curl -s -o /dev/null -w "%{http_code}\n" -X POST http://127.0.0.1:8000/api/scena
 ## Evaluation and Verification
 
 ### Unit and Integration Tests
-GridLens includes 111 comprehensive test cases covering simulation accuracy, comparison logic, forecast algorithms, RAG retrieval, citations, logging, and UI callbacks:
+GridLens includes 121 comprehensive test cases covering simulation accuracy, comparison logic, forecast algorithms, RAG retrieval, citations, logging, and UI callbacks:
 ```bash
 python -m pytest -q
 ```
