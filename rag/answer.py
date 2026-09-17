@@ -10,7 +10,6 @@ from llm.provider import (
     LocalDeterministicProvider,
     build_provider_from_settings,
 )
-
 from rag.retriever import (
     DEFAULT_SIMILARITY_THRESHOLD,
     DEFAULT_TOP_K,
@@ -122,6 +121,9 @@ def answer_question(
     similarity_threshold: float = DEFAULT_SIMILARITY_THRESHOLD,
     settings: Settings | None = None,
     provider: LLMProvider | None = None,
+    provider_name: str | None = None,
+    model_name: str | None = None,
+    api_key: str | None = None,
 ) -> ExplanationResult:
     """
     This is the main entry point that ties everything above 
@@ -148,16 +150,26 @@ def answer_question(
             generated_at=datetime.now(UTC),
         )
 
+    active_provider_name = provider_name or settings.llm_provider
     provider = provider or build_provider_from_settings(
-        settings.llm_provider,
-        settings.openai_api_key,
-        settings.openai_model,
-        settings.request_timeout_seconds,
-        settings.max_retries,
+        provider_name=active_provider_name,
+        openai_api_key=settings.openai_api_key,
+        openai_model=settings.openai_model,
+        timeout_seconds=settings.request_timeout_seconds,
+        max_retries=settings.max_retries,
+        api_key=api_key,
+        model=model_name,
     )
 
     if isinstance(provider, LocalDeterministicProvider):
         answer_text = _compose_deterministic_answer(question, fact_lines, citations)
+        from llm.provider import normalize_provider_key
+        if provider_name and normalize_provider_key(provider_name) != "local" and not api_key:
+            answer_text = (
+                f"*(Offline fallback: No API key was configured for provider {provider_name!r}. "
+                f"Set the API key in environment or UI to enable remote inference.)*\n\n"
+                + answer_text
+            )
     else:
         completion = provider.complete(
             CompletionRequest(
