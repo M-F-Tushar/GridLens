@@ -8,6 +8,7 @@ from engine.fixtures import load_tariffs
 from engine.forecast import run_forecast
 from engine.scenario_engine import run_scenario
 from llm.conversation import SessionRegistry
+from llm.provider import PROVIDER_DESCRIPTIONS, PROVIDER_MODELS
 from rag.answer import answer_question
 from ui.charts import (
     battery_soc_figure,
@@ -86,23 +87,34 @@ def _compare(
     return comparison_table_markdown(comparison)
 
 
-def _ask(question: str):
+def _ask(
+    question: str,
+    provider: str = "Local (Offline)",
+    model: str = "local-deterministic",
+    api_key: str = "",
+):
     session = _SESSIONS.get_or_create("default")
-    result = answer_question(question=question, scenario_result=session.last_scenario)
+    result = answer_question(
+        question=question,
+        scenario_result=session.last_scenario,
+        provider_name=provider,
+        model_name=model,
+        api_key=api_key.strip() or None,
+    )
     return result.answer, citations_markdown(result.citations)
 
 
 def build_app() -> gr.Blocks:
     tariff_ids = sorted(load_tariffs().keys())
     with gr.Blocks(title="GridLens") as demo:
-        gr.Markdown("# GridLens — Energy-System Scenario Explorer")
+        gr.Markdown("# ⚡ GridLens — Energy-System Scenario Explorer")
         gr.Markdown(
             "Configure a scenario, forecast demand/solar, compare options, and ask questions. "
             "Everything below runs fully offline against local fixture data; no API key is required."
         )
 
         with gr.Tabs():
-            with gr.TabItem("Scenario"):
+            with gr.TabItem("⚡ Scenario"):
                 with gr.Row():
                     with gr.Column(scale=1):
                         scenario_id = gr.Textbox(label="Scenario ID", value="baseline")
@@ -128,7 +140,7 @@ def build_app() -> gr.Blocks:
                     outputs=[demand_chart, soc_chart, kpi_output, warnings_output],
                 )
 
-            with gr.TabItem("Forecast"):
+            with gr.TabItem("📈 Forecast"):
                 with gr.Row():
                     with gr.Column(scale=1):
                         fc_site = gr.Textbox(label="Site", value="campus-microgrid-a")
@@ -150,7 +162,7 @@ def build_app() -> gr.Blocks:
                     outputs=[fc_chart, fc_status],
                 )
 
-            with gr.TabItem("Compare"):
+            with gr.TabItem("⚖️ Compare"):
                 with gr.Row():
                     with gr.Column(scale=1):
                         cmp_base = gr.Textbox(label="Base Scenario ID", value="no-battery")
@@ -166,7 +178,7 @@ def build_app() -> gr.Blocks:
                     outputs=[cmp_output],
                 )
 
-            with gr.TabItem("Ask GridLens"):
+            with gr.TabItem("💬 Ask GridLens"):
                 with gr.Row():
                     with gr.Column(scale=1):
                         ask_input = gr.Textbox(
@@ -174,14 +186,46 @@ def build_app() -> gr.Blocks:
                             value="How is battery round-trip efficiency modeled?",
                             lines=3,
                         )
+                        default_provider = "Local (Offline)"
+                        provider_dropdown = gr.Dropdown(
+                            choices=list(PROVIDER_MODELS.keys()),
+                            value=default_provider,
+                            label="LLM Provider",
+                        )
+                        model_dropdown = gr.Dropdown(
+                            choices=PROVIDER_MODELS[default_provider],
+                            value=PROVIDER_MODELS[default_provider][0],
+                            label="Model",
+                            allow_custom_value=True,
+                        )
+                        api_key_input = gr.Textbox(
+                            label="API Key (optional)",
+                            placeholder="Leave blank to use environment variable or offline fallback",
+                            type="password",
+                        )
+                        provider_info = gr.Markdown(
+                            value=PROVIDER_DESCRIPTIONS[default_provider]
+                        )
                         ask_button = gr.Button("Ask", variant="primary")
                     with gr.Column(scale=2):
                         ask_answer = gr.Markdown(label="Answer")
                         ask_sources = gr.Markdown(label="Citations & Sources")
 
+                def _on_provider_change(provider_choice: str):
+                    models = PROVIDER_MODELS.get(provider_choice, ["local-deterministic"])
+                    default_model = models[0] if models else ""
+                    desc = PROVIDER_DESCRIPTIONS.get(provider_choice, "")
+                    return gr.update(choices=models, value=default_model), desc
+
+                provider_dropdown.change(
+                    fn=_on_provider_change,
+                    inputs=[provider_dropdown],
+                    outputs=[model_dropdown, provider_info],
+                )
+
                 ask_button.click(
                     fn=_ask,
-                    inputs=[ask_input],
+                    inputs=[ask_input, provider_dropdown, model_dropdown, api_key_input],
                     outputs=[ask_answer, ask_sources],
                 )
 
@@ -189,7 +233,7 @@ def build_app() -> gr.Blocks:
 
 
 def main() -> None:
-    build_app().launch()
+    build_app().launch(theme=gr.themes.Soft())
 
 
 if __name__ == "__main__":
