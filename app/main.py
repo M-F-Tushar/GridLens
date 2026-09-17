@@ -16,7 +16,6 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.config import get_settings
 from app.logging_config import RequestLoggingMiddleware, configure_logging
 from app.schemas import ScenarioCompareRequest
-
 from domain.models import (
     ExplanationRequest,
     ExplanationResult,
@@ -164,4 +163,6 @@ def explain_endpoint(request: ExplanationRequest) -> ExplanationResult:
         top_k=request.top_k,
         similarity_threshold=request.similarity_threshold,
         settings=settings,
+        provider_name=request.provider,
+        model_name=request.model,
     )
