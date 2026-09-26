@@ -2,7 +2,7 @@
 
 An LLM-assisted energy intelligence platform for scenario modeling, forecasting, and evidence-grounded decision support.  
 
-GridLens combines a deterministic microgrid simulation engine with a grounded explanation layer. It enables users to model distributed energy resource scenarios involving electricity demand, solar PV generation, battery energy storage, grid imports and exports, operating costs, and carbon emissions.
+GridLens combines a deterministic microgrid simulation engine with a grounded explanation layer. It enables users to model distributed energy resource scenarios involving electricity demand, solar PV generation, battery energy storage, grid imports and exports, operating costs, and carbon emissions. 
 
 All calculations are performed deterministically in Python. An LLM-powered retrieval-augmented generation (RAG) layer sits on top of those numerical outputs to explain system behavior, answer operational questions using cited project documentation, and communicate outcomes without modifying or inventing underlying values.
 
